@@ -163,6 +163,7 @@ class IntervalHandler:
     def perform_action(self, time):
         """Perform the action if an interval has passed"""
         if self._check_step(time):
+            print(time) #This line is just for testing, remove when ready to merge
             self._action()
             self._last_action = time
             self.current_step += 1
@@ -436,8 +437,6 @@ class ClockDiagnostic(Diagnostic):
         self.filename = input_data["filename"]
         self.csv = None
         self.interval = self._input_data.get('write_interval', None)
-        if self.interval:
-            self.handler = IntervalHandler(self.interval, self.finalize)
 
     def diagnose(self):
         """Append time into the csv buffer."""
@@ -451,6 +450,8 @@ class ClockDiagnostic(Diagnostic):
         diagnostic_size = (self._owner.clock.num_steps + 1, 1)
         self.csv = CSVOutputUtility(self._input_data["filename"],
                                     diagnostic_size)
+        if self.interval:
+            self.handler = IntervalHandler(self.interval, self.csv.finalize)
 
     def finalize(self):
         """Write time into self.csv and saves as a CSV file."""
