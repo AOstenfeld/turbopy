@@ -435,9 +435,13 @@ class ClockDiagnostic(Diagnostic):
         super().__init__(owner, input_data)
         self.filename = input_data["filename"]
         self.csv = None
+        self.interval = self._input_data.get('write_interval', None)
+        if self.interval:
+            self.handler = IntervalHandler(self.interval, self.finalize)
 
     def diagnose(self):
         """Append time into the csv buffer."""
+        self.handler.perform_action(self._owner.clock.time)
         self.csv.diagnose(self._owner.clock.time)
 
     def initialize(self):
