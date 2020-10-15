@@ -436,11 +436,13 @@ class ClockDiagnostic(Diagnostic):
         super().__init__(owner, input_data)
         self.filename = input_data["filename"]
         self.csv = None
-        self.interval = self._input_data.get('write_interval', None)
+        self._interval = self._input_data.get('write_interval', None)
+        self._handler = None
 
     def diagnose(self):
         """Append time into the csv buffer."""
-        self.handler.perform_action(self._owner.clock.time)
+        if self._handler:
+            self._handler.perform_action(self._owner.clock.time)
         self.csv.diagnose(self._owner.clock.time)
 
     def initialize(self):
@@ -450,8 +452,8 @@ class ClockDiagnostic(Diagnostic):
         diagnostic_size = (self._owner.clock.num_steps + 1, 1)
         self.csv = CSVOutputUtility(self._input_data["filename"],
                                     diagnostic_size)
-        if self.interval:
-            self.handler = IntervalHandler(self.interval, self.csv.finalize)
+        if self._interval:
+            self._handler = IntervalHandler(self._interval, self.csv.finalize)
 
     def finalize(self):
         """Write time into self.csv and saves as a CSV file."""
