@@ -211,12 +211,16 @@ class PointDiagnostic(Diagnostic):
         self.get_value = None
         self.field = None
         self.outputter = None
+        self.handler = None
 
     def diagnose(self):
         """
         Run output function given the value of the field.
         """
         self.outputter.diagnose(self.get_value(self.field))
+        if self.handler:
+            self.handler.perform_action(self._owner.clock.time)
+        self.csv.diagnose(self._owner.clock.time)
 
     def inspect_resource(self, resource):
         """
@@ -246,6 +250,10 @@ class PointDiagnostic(Diagnostic):
 
         # Use composition to provide i/o functionality
         self.outputter = utilities[self._input_data["output_type"]](**self._input_data)
+        
+        # set up interval handler
+        if self.interval:
+            self.handler = IntervalHandler(self.interval, self.csv.write_data)
 
     def finalize(self):
         """
@@ -430,19 +438,25 @@ class ClockDiagnostic(Diagnostic):
         File name for CSV time file
     csv : :class:`numpy.ndarray`
         Array to store values to be written into a CSV file
+    interval : float, None
+        The time interval to wait in between writing to output file. If interval is None,
+        then the outputs are written only at the end of the simulation.
+    handler : IntervalHandler
+        The :class:`IntervalHandler` object that handles writing to output files while
+        the simulation is running. Is None if the interval parameter is not specified
     """
 
     def __init__(self, owner: Simulation, input_data: dict):
         super().__init__(owner, input_data)
         self.filename = input_data["filename"]
         self.csv = None
-        self._interval = self._input_data.get('write_interval', None)
-        self._handler = None
+        self.interval = self._input_data.get('write_interval', None)
+        self.handler = None
 
     def diagnose(self):
         """Append time into the csv buffer."""
-        if self._handler:
-            self._handler.perform_action(self._owner.clock.time)
+        if self.handler:
+            self.handler.perform_action(self._owner.clock.time)
         self.csv.diagnose(self._owner.clock.time)
 
     def initialize(self):
@@ -452,8 +466,8 @@ class ClockDiagnostic(Diagnostic):
         diagnostic_size = (self._owner.clock.num_steps + 1, 1)
         self.csv = CSVOutputUtility(self._input_data["filename"],
                                     diagnostic_size)
-        if self._interval:
-            self._handler = IntervalHandler(self._interval, self.csv.finalize)
+        if self.interval:
+            self.handler = IntervalHandler(self.interval, self.csv.write_data)
 
     def finalize(self):
         """Write time into self.csv and saves as a CSV file."""
