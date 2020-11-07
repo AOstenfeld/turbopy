@@ -208,6 +208,8 @@ class PointDiagnostic(Diagnostic):
         self.location = input_data["location"]
         self.field_name = input_data["field"]
         self.output = input_data["output_type"]  # "stdout"
+        self.csv = None
+        self.csv_input = self._input_data.get("filename", None)
         self.get_value = None
         self.field = None
         self.outputter = None
@@ -221,7 +223,8 @@ class PointDiagnostic(Diagnostic):
         self.outputter.diagnose(self.get_value(self.field))
         if self.handler:
             self.handler.perform_action(self._owner.clock.time)
-        self.csv.diagnose(self._owner.clock.time)
+        if self.csv:
+            self.csv.diagnose(self._owner.clock.time)
 
     def inspect_resource(self, resource):
         """
@@ -253,8 +256,10 @@ class PointDiagnostic(Diagnostic):
         self.outputter = utilities[self._input_data["output_type"]](**self._input_data)
         
         # set up interval handler
-        if self.interval:
-            self.handler = IntervalHandler(self.interval, self.csv.write_data)
+        if self.csv_input:
+            self.csv = CSVOutputUtility(self.csv_input, diagnostic_size)
+            if self.interval:
+                self.handler = IntervalHandler(self.interval, self.csv.write_data)
 
     def finalize(self):
         """
@@ -312,6 +317,10 @@ class FieldDiagnostic(Diagnostic):
         self.field_was_found = False
 
         self.outputter = None
+        self.csv = None
+        self.csv_input = self._input_data.get("filename", None)
+        self.handler = None
+        self.interval = self._input_data.get('write_interval', None)
 
     def check_step(self):
         """
@@ -330,6 +339,10 @@ class FieldDiagnostic(Diagnostic):
             self.outputter.diagnose(self.field[:, self.component])
         else:
             self.outputter.diagnose(self.field)
+        if self.handler:
+            self.handler.perform_action(self._owner.clock.time)
+        if self.csv:
+            self.csv.diagnose(self._owner.clock.time)
 
     def inspect_resource(self, resource):
         """
@@ -369,6 +382,12 @@ class FieldDiagnostic(Diagnostic):
 
         # Use composition to provide i/o functionality
         self.outputter = utilities[self._input_data["output_type"]](**self._input_data)
+        
+        # Set up interval handler
+        if self.csv_input:
+            self.csv = CSVOutputUtility(self.csv_input, self.diagnostic_size)
+            if self.interval:
+                self.handler = IntervalHandler(self.interval, self.csv.write_data)
 
     def finalize(self):
         """
