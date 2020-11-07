@@ -211,6 +211,7 @@ class PointDiagnostic(Diagnostic):
         self.get_value = None
         self.field = None
         self.outputter = None
+        self.interval = self._input_data.get('write_interval', None)
         self.handler = None
 
     def diagnose(self):
