@@ -208,8 +208,6 @@ class PointDiagnostic(Diagnostic):
         self.location = input_data["location"]
         self.field_name = input_data["field"]
         self.output = input_data["output_type"]  # "stdout"
-        self.csv = None
-        self.csv_input = self._input_data.get("filename", None)
         self.get_value = None
         self.field = None
         self.outputter = None
@@ -223,8 +221,6 @@ class PointDiagnostic(Diagnostic):
         self.outputter.diagnose(self.get_value(self.field))
         if self.handler:
             self.handler.perform_action(self._owner.clock.time)
-        if self.csv:
-            self.csv.diagnose(self._owner.clock.time)
 
     def inspect_resource(self, resource):
         """
@@ -317,8 +313,6 @@ class FieldDiagnostic(Diagnostic):
         self.field_was_found = False
 
         self.outputter = None
-        self.csv = None
-        self.csv_input = self._input_data.get("filename", None)
         self.handler = None
         self.interval = self._input_data.get('write_interval', None)
 
@@ -341,8 +335,6 @@ class FieldDiagnostic(Diagnostic):
             self.outputter.diagnose(self.field)
         if self.handler:
             self.handler.perform_action(self._owner.clock.time)
-        if self.csv:
-            self.csv.diagnose(self._owner.clock.time)
 
     def inspect_resource(self, resource):
         """
