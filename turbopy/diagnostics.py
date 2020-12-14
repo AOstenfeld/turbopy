@@ -321,10 +321,8 @@ class PointDiagnostic(Diagnostic):
         self.outputter = utilities[self._input_data["output_type"]](**self._input_data)
         
         # set up interval handler
-        if self.csv_input:
-            self.csv = CSVOutputUtility(self.csv_input, diagnostic_size)
-            if self.interval:
-                self.handler = IntervalHandler(self.interval, self.csv.write_data)
+        if self.interval:
+            self.handler = IntervalHandler(self.interval, self.csv.write_data)
 
     def finalize(self):
         """
